@@ -81,7 +81,7 @@ class DialogBox {
 
         /*  display the entire passage without text wrap
          */
-        for (let i=0; i<this.index; i++) {
+        for (let i = 0; i < this.index; i++) {
             // save the position of the ith character. we'll need this later
             CHAR_POS.push(cursor.copy())
 
@@ -103,7 +103,7 @@ class DialogBox {
             }
 
             // gigamarujr doesn't render spaces properly in JS, so we catch this
-            if(this.text[i] == ' ') {
+            if (this.text[i] == ' ') {
                 // don't display
             } else text(this.text[i], cursor.x, cursor.y)
 
@@ -121,16 +121,16 @@ class DialogBox {
                      limit, then newline
              */
             if (this.text[i] === ' ') {
-                let ndi = this.text.indexOf(" ", i+1) // next delimiter index
-                let nextWord = this.text.substring(i+1, ndi)
+                let ndi = this.text.indexOf(" ", i + 1) // next delimiter index
+                let nextWord = this.text.substring(i + 1, ndi)
 
                 if (wordWidth(nextWord) +
                     wordWidth(this.text[i]) +
                     cursor.x > LINE_WRAP_X_POS) {
-                        cursor.y += HIGHLIGHT_BOX_HEIGHT
+                    cursor.y += HIGHLIGHT_BOX_HEIGHT
 
-                        // don't forget to wrap the x coordinates! ᴖᴥᴖ
-                        cursor.x = TEXT_LEFT_MARGIN
+                    // don't forget to wrap the x coordinates! ᴖᴥᴖ
+                    cursor.x = TEXT_LEFT_MARGIN
                 }
             }
         }
@@ -145,134 +145,4 @@ class DialogBox {
         cam.endHUD()
     }
 
-
-    /*  saves the output of render2DTextBox to a PGraphics object with
-        transparency. we can save this and use image() to display later!
-        this gets around several p5.js bugs in 3D
-     */
-    saveRenderedTextBoxImg() {
-        const pg = createGraphics(width, height)
-        pg.colorMode(HSB, 360, 100, 100, 100)
-
-        // add render2DTextBox code here. don't forget extra pg. calls if
-        // doing manually. now it's automatic because we pass in pg!
-        this.render2DTextBox(pg)
-        pg.save()
-    }
-
-
-    /*  renders the transparent dialog box. modify this function for use in
-        saveRenderedImg. pg is "this" passed from sketch.js
-     */
-    render2DTextBox(pg) {
-        /*  we want a rectangle without the corners, but the rounded border
-            arguments in rect() don't work in WEBGL. let's make our own
-            rectangle with the corners removed using beginShape and vertices!
-         */
-
-        /*
-        rect(
-            this.LEFT_MARGIN, // top left corner x
-            height-this.HEIGHT-this.BOTTOM_MARGIN, // tlc y
-            boxWidth, // width
-            this.HEIGHT, // height
-            50) // rounded borders don't work in WEBGL!
-        */
-
-        // these are the coordinates for the top left corner of our target box
-        const x = this.LEFT_MARGIN
-        const y = height-this.HEIGHT-this.BOTTOM_MARGIN
-        const r = 3 // side length of the corner triangle
-        const s = 3.5 // scaling factor of r to extend brackets in corners
-
-        const TLC = new p5.Vector(x, y) // top left corner
-        const TRC = new p5.Vector(x+this.boxWidth, y) // top right corner
-        const BRC = new p5.Vector(x+this.boxWidth, y+this.HEIGHT) // bottom r.
-        // corner
-        const BLC = new p5.Vector(x, y+this.HEIGHT)
-        const lineWeight = 2
-
-        pg.fill(210, 62, 12, 75)
-        pg.noStroke()
-        pg.beginShape()
-
-        // vertices around each of the four corners of the rectangle
-        pg.vertex(TLC.x, TLC.y+r)
-        pg.vertex(TLC.x+r, TLC.y)
-        pg.vertex(TRC.x-r, TRC.y)
-        pg.vertex(TRC.x, TRC.y+r)
-        pg.vertex(BRC.x, BRC.y-r)
-        pg.vertex(BRC.x-r, BRC.y)
-        pg.vertex(BLC.x+r, BLC.y)
-        pg.vertex(BLC.x, BLC.y-r)
-        pg.endShape()
-
-        // the cyan outline
-        const cyan = color(188, 20, 94)
-        pg.stroke(cyan)
-        pg.strokeWeight(lineWeight)
-        pg.noFill()
-
-        // top border including corner guards
-        pg.beginShape()
-        // vertical line extending below TL corner guard
-        pg.vertex(TLC.x, TLC.y+s*r)
-
-        // TL corner bottom left point
-        pg.vertex(TLC.x, TLC.y+r)
-
-        // TL corner top right point
-        pg.vertex(TLC.x+r, TLC.y)
-        pg.vertex(TRC.x-r, TRC.y)
-        pg.vertex(TRC.x, TRC.y+r)
-        pg.vertex(TRC.x, TRC.y+s*r)
-        pg.endShape()
-
-        // bottom border including corner guards
-        pg.strokeWeight(lineWeight)
-        pg.beginShape()
-        pg.vertex(BRC.x, BRC.y-s*r)
-        pg.vertex(BRC.x, BRC.y-r)
-        pg.vertex(BRC.x-r, BRC.y)
-        pg.vertex(BLC.x+r, BLC.y)
-        pg.vertex(BLC.x, BLC.y-r)
-        pg.vertex(BLC.x, BLC.y-s*r)
-        pg.endShape()
-
-        const cornerGuardHorizontalScale = 0.108
-
-        /** Corner guards! */
-        // extra thick corner guard, top left
-        pg.strokeWeight(lineWeight+1)
-        pg.beginShape()
-        pg.vertex(TLC.x+1, TLC.y+r+1) // BL corner
-        pg.vertex(TLC.x+1+r, TLC.y+1) // TR corner
-        pg.vertex(TLC.x+this.boxWidth*cornerGuardHorizontalScale, TLC.y+1)
-        // ⅛ of boxWidth bold line
-        pg.endShape()
-
-        // extra thick corner guard, top right
-        pg.strokeWeight(lineWeight+1)
-        pg.beginShape()
-        pg.vertex(TRC.x-this.boxWidth*cornerGuardHorizontalScale, TLC.y+1)
-        pg.vertex(TRC.x-r-1, TRC.y+1)
-        pg.vertex(TRC.x-1, TRC.y+r+1)
-        pg.endShape()
-
-        // extra thick corner guard, bottom right
-        pg.strokeWeight(lineWeight+1)
-        pg.beginShape()
-        pg.vertex(BRC.x-1, BRC.y-1-r)
-        pg.vertex(BRC.x-1-r, BRC.y-1)
-        pg.vertex(BRC.x-this.boxWidth*cornerGuardHorizontalScale, BRC.y-1)
-        pg.endShape()
-
-        // extra thick corner guard, bottom right
-        pg.strokeWeight(lineWeight+1)
-        pg.beginShape()
-        pg.vertex(BLC.x+this.boxWidth*cornerGuardHorizontalScale, BLC.y-1)
-        pg.vertex(BLC.x+1+r, BLC.y-1)
-        pg.vertex(BLC.x+1, BLC.y-1-r)
-        pg.endShape()
-    }
 }
