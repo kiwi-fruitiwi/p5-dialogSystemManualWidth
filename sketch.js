@@ -1,4 +1,4 @@
-/*
+/**
 
 @author Kiwi
 @date 2021-11-19
@@ -6,30 +6,33 @@
 this project attempts to replicate the animated dialog box in Metroid Dread
 that appears whenever Adam is speaking.
 
-what am I aiming for?
-    ☒ WEBGL with something 3D in the background
-    ☒ beginHUD, endHUD: semi-transparent box design.
-    ☒ generate image for box because of WEBGL errors
-    ☒ use math to generate "corner guards"
-    text from a passage using elements from p5-typerc including:
-        text cursor
-        word wrapping
-        time based display from left to right, top to bottom
-    additional features:
-        colors for letters using objects for each character
+coding plan
+ switch font → verify giga.ttf doesn't work
+ switch textWidth to wordWidth
+ implement simple memoization in setup?
+
+ 🌟 try to use the debugger more
+
 */
 
 let font
 let cam // easycam!
 
+/**
+ * this can't be large because our charWidth graphics buffer is of finite
+ * size! note that we must also take into account our webpage scaling in
+ * chrome; I have it set at 125%, a significant bump up from default.
+ * @type {number}
+ */
+const FONT_SIZE = 18
+const LETTER_SPACING = 1.25
+const SPACE_WIDTH = FONT_SIZE / 2
+
+
 // define the hue and saturation for all 3 axes
 const X_HUE = 0, X_SAT = 80, Y_HUE = 90, Y_SAT = 80, Z_HUE = 210, Z_SAT = 80
 const DIM = 40 // brightness value for the dimmer negative axis
 const BRIGHT = 75 // brightness value for the brighter positive axis
-
-// read the amplitude of our voice from the mic
-let voice
-let p5amp
 
 let sketch
 let mode_2D = false
@@ -39,28 +42,21 @@ let lastPassageAdvanceTime = 0 // when was the last passage advance?
 
 function preload() {
     // font = loadFont('data/giga.ttf') // doesn't work due to textWidth issues
-    // font = loadFont('data/VDL-GigaMaru M.ttf')
-    // font = loadFont('data/lucida-console.ttf')
-    // font = loadFont('data/notjustgroovy.ttf')
     font = loadFont('data/meiryo.ttf')
-    voice = loadSound('data/adam.mp3')
     passages = loadJSON("passages.json")
 
 }
 
 /* populate an array of passage text */
 let textList = []
+
 /* grab other information: ms spent on each passage, highlights */
 let highlightList = [] // a list of tuples specifying highlights and indexes
 let msPerPassage = 0 // how long to wait before advancing a passage
 
 function setup() {
-    if (mode_2D) {
-        createCanvas(640, 360)
-    } else {
-        createCanvas(640, 360, WEBGL)
-        cam = new Dw.EasyCam(this._renderer, {distance: 240});
-    }
+    createCanvas(640, 360, WEBGL)
+    cam = new Dw.EasyCam(this._renderer, {distance: 240});
     
     colorMode(HSB, 360, 100, 100, 100)
     textFont(font, 12)
@@ -82,45 +78,26 @@ function setup() {
 
     // TODO add arguments to DialogBox: tpp, hll
     sketch = new DialogBox(textList, highlightList, msPerPassage)
-
-    // passage.saveRenderedTextBoxImg()
 }
 
 function draw() {
     background(234, 34, 24)
-    // background(223, 29, 35)
 
-    // 2D mode is for testing our dialog box!
-    if (mode_2D) {
-        sketch.render2DTextBox(this)
+    ambientLight(250);
+    directionalLight(0, 0, 10, .5, 1, 0); // z axis seems inverted
+    drawBlenderAxes()
+    displayHUD()
 
-        noStroke()
-        fill(0, 0, 100)
-        // text(" ", 190, 200)
-        // text("A", 200, 200)
-        // text("D", 210, 200)
-        // text("A", 220, 200)
-        // text("M", 230, 200)
-        sketch.renderText()
-    } else {
-        // otherwise, we go into 3D and load our transparent, generated dialog
-        // box img on top of a simple 3D scene.
-        ambientLight(250);
-        directionalLight(0, 0, 10, .5, 1, 0); // z axis seems inverted
-        drawBlenderAxes()
-        displayHUD()
+    sketch.renderTextFrame(cam)
+    sketch.renderText(cam)
 
-        sketch.renderTextFrame(cam)
-        sketch.renderText(cam)
+    if (frameCount % 1 === 0) {
+        sketch.advanceChar()
+    }
 
-        if (frameCount % 1 === 0) {
-            sketch.advanceChar()
-        }
-
-        if (millis() - lastPassageAdvanceTime > 4000) {
-            sketch.nextPassage()
-            lastPassageAdvanceTime = millis()
-        }
+    if (millis() - lastPassageAdvanceTime > 4000) {
+        sketch.nextPassage()
+        lastPassageAdvanceTime = millis()
     }
 
     /*  to get around the unconnected beginShape problem in WEBGL, maybe we can
@@ -186,12 +163,13 @@ function drawBlenderAxes() {
    https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/addons/p5.sound.min.js.map
    : HTTP error: status code 404, net::ERR_HTTP_RESPONSE_CODE_FAILURE
  */
+/*
 function touchStarted() {
     if (getAudioContext().state !== 'running') {
         getAudioContext().resume().then(r => {
         });
     }
-}
+}*/
 
 
 // prevent the context menu from showing up :3 nya~
