@@ -24,7 +24,7 @@ let cam // easycam!
  * chrome; I have it set at 125%, a significant bump up from default.
  * @type {number}
  */
-const FONT_SIZE = 18
+const FONT_SIZE = 24
 const LETTER_SPACING = 1.25
 const SPACE_WIDTH = FONT_SIZE / 2
 
@@ -47,6 +47,9 @@ function preload() {
 
 }
 
+/* empty dictionary for our word length cache */
+let cache = {}
+
 /* populate an array of passage text */
 let textList = []
 
@@ -55,11 +58,11 @@ let highlightList = [] // a list of tuples specifying highlights and indexes
 let msPerPassage = 0 // how long to wait before advancing a passage
 
 function setup() {
-    createCanvas(640, 360, WEBGL)
+    createCanvas(1280, 720, WEBGL)
     cam = new Dw.EasyCam(this._renderer, {distance: 240});
     
     colorMode(HSB, 360, 100, 100, 100)
-    textFont(font, 12)
+    textFont(font, FONT_SIZE)
 
     /* 'in' makes our variable the index, while 'of' makes it the value! */
     for (let key in passages) {
@@ -172,64 +175,71 @@ function wordWidth(word) {
 
 /*  return the width in pixels of char using the pixels array */
 function charWidth(char) {
-    /**
-     * create a graphics buffer to display a character. then determine its
-     * width by iterating through every pixel. Noting that 'm' in size 18
-     * font is only 14 pixels, perhaps setting the buffer to a max width of
-     * FONT_SIZE is sufficient. The height needs to be a bit higher to
-     * account for textDescent, textAscent. x1.5 is inexact, but should be
-     * plenty.
-     * @type {p5.Graphics}
-     */
-    let g = createGraphics(FONT_SIZE, FONT_SIZE * 1.5)
-    g.colorMode(HSB, 360, 100, 100, 100)
-    g.textFont(font, FONT_SIZE)
-    g.background(0, 0, 0)
-    g.fill(0, 0, 100)
+    if (cache[char]) {
+        // console.log(`cached answer returned: ${cache[char]}`)
+        return cache[char]
+    } else {
+        /**
+         * create a graphics buffer to display a character. then determine its
+         * width by iterating through every pixel. Noting that 'm' in size 18
+         * font is only 14 pixels, perhaps setting the buffer to a max width of
+         * FONT_SIZE is sufficient. The height needs to be a bit higher to
+         * account for textDescent, textAscent. x1.5 is inexact, but should be
+         * plenty.
+         * @type {p5.Graphics}
+         */
+        let g = createGraphics(FONT_SIZE, FONT_SIZE * 1.5)
+        g.colorMode(HSB, 360, 100, 100, 100)
+        g.textFont(font, FONT_SIZE)
+        g.background(0, 0, 0)
+        g.fill(0, 0, 100)
 
-    /**
-     *  the base height of g is g.height; this is an approximation of what
-     *  would fit most characters. utterly untested but seems okay with
-     *  large paragraphs. A lowercase 'm' is about ⅓ the height of
-     *  textAscent + textDescent.; a 'j' is ⅔.
-     */
-    g.text(char, 0, g.height - FONT_SIZE / 2)
-    g.loadPixels()
+        /**
+         *  the base height of g is g.height; this is an approximation of what
+         *  would fit most characters. utterly untested but seems okay with
+         *  large paragraphs. A lowercase 'm' is about ⅓ the height of
+         *  textAscent + textDescent.; a 'j' is ⅔.
+         */
+        g.text(char, 0, g.height - FONT_SIZE / 2)
+        g.loadPixels()
 
-    let pd = g.pixelDensity()
-    let offset
-    let max_x = 0 /* the maximum x position we've seen a non-black pixel */
+        let pd = g.pixelDensity()
+        let offset
+        let max_x = 0 /* the maximum x position we've seen a non-black pixel */
 
-    /*  a pixel value "fails" if it's not [0, 0, 0, 255] which indicates
-     black. so if redFail is true, that means red is not 0. if alphaFail
-     is true, it means alpha is not 255.
-     */
-    let redFail, greenFail, blueFail, alphaFail
+        /*  a pixel value "fails" if it's not [0, 0, 0, 255] which indicates
+         black. so if redFail is true, that means red is not 0. if alphaFail
+         is true, it means alpha is not 255.
+         */
+        let redFail, greenFail, blueFail, alphaFail
 
-    /* iterate through every pixel in pixels[] array */
-    for (let x = 0; x < g.width; x++) {
-        for (let y = 0; y < g.height; y++) {
-            /* 🌟 there are two methods below: .get() and pixels[]. use one */
+        /* iterate through every pixel in pixels[] array */
+        for (let x = 0; x < g.width; x++) {
+            for (let y = 0; y < g.height; y++) {
+                /* 🌟 there are two methods below: .get() and pixels[]. use one */
 
-            // the .get() strategy. slower than using pixels[] and
-            // loadpixels() let c = g.get(x, y) if (!(c[0] === 0 && c[1]
-            // === 0 && c[2] === 0 && c[3] === 255)) max_x = Math.max(x,
-            // max_x)
+                // the .get() strategy. slower than using pixels[] and
+                // loadpixels() let c = g.get(x, y) if (!(c[0] === 0 && c[1]
+                // === 0 && c[2] === 0 && c[3] === 255)) max_x = Math.max(x,
+                // max_x)
 
-            // the pixels[] strategy. about twice the speed as .get()
+                // the pixels[] strategy. about twice the speed as .get()
 
-            offset = (y * g.width + x) * pd * 4
-            // pixel values are rgba in the format [r, g, b, a]
-            redFail = (offset % 4 === 0 && g.pixels[offset] !== 0)
-            greenFail = (offset % 4 === 1 && g.pixels[offset] !== 0)
-            blueFail = (offset % 4 === 2 && g.pixels[offset] !== 0)
-            alphaFail = (offset % 4 === 3 && g.pixels[offset] !== 255)
+                offset = (y * g.width + x) * pd * 4
+                // pixel values are rgba in the format [r, g, b, a]
+                redFail = (offset % 4 === 0 && g.pixels[offset] !== 0)
+                greenFail = (offset % 4 === 1 && g.pixels[offset] !== 0)
+                blueFail = (offset % 4 === 2 && g.pixels[offset] !== 0)
+                alphaFail = (offset % 4 === 3 && g.pixels[offset] !== 255)
 
-            if (redFail || greenFail || blueFail || alphaFail)
-                max_x = Math.max(x, max_x)
+                if (redFail || greenFail || blueFail || alphaFail)
+                    max_x = Math.max(x, max_x)
+            }
         }
+
+        cache[char] = max_x
+        return max_x
     }
-    return max_x
 }
 
 

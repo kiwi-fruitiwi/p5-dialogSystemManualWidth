@@ -70,8 +70,8 @@ class DialogBox {
         noStroke()
         let CHAR_POS = []
 
-        const TEXT_TOP_MARGIN = 290
-        const TEXT_LEFT_MARGIN = 75
+        const TEXT_TOP_MARGIN = 570
+        const TEXT_LEFT_MARGIN = 120
         const TEXT_RIGHT_MARGIN = TEXT_LEFT_MARGIN
         const HIGHLIGHT_PADDING = 0
 
@@ -103,7 +103,7 @@ class DialogBox {
             }
 
             // gigamarujr doesn't render spaces properly in JS, so we catch this
-            if (this.text[i] == ' ') {
+            if (this.text[i] === ' ') {
                 // don't display
             } else text(this.text[i], cursor.x, cursor.y)
 
@@ -127,7 +127,8 @@ class DialogBox {
                 if (wordWidth(nextWord) +
                     wordWidth(this.text[i]) +
                     cursor.x > LINE_WRAP_X_POS) {
-                    cursor.y += HIGHLIGHT_BOX_HEIGHT
+                    cursor.y += HIGHLIGHT_BOX_HEIGHT + 5
+                    /* 5 is additional height to match dread's line-height*/
 
                     // don't forget to wrap the x coordinates! ᴖᴥᴖ
                     cursor.x = TEXT_LEFT_MARGIN
