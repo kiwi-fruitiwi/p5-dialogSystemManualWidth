@@ -41,8 +41,8 @@ let passages // our json file input
 let lastPassageAdvanceTime = 0 // when was the last passage advance?
 
 function preload() {
-    // font = loadFont('data/giga.ttf') // doesn't work due to textWidth issues
-    font = loadFont('data/meiryo.ttf')
+    font = loadFont('data/giga.ttf') // doesn't work due to textWidth issues
+    // font = loadFont('data/meiryo.ttf')
     passages = loadJSON("passages.json")
 
 }

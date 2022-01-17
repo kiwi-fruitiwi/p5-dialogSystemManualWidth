@@ -109,10 +109,7 @@ class DialogBox {
 
             /*  modify cursor position to where the next letter should be.
              */
-            cursor.x += textWidth(this.text[i])
-            // cursor.x += 10
-
-            // console.log(textWidth(this.text[i]))
+            cursor.x += wordWidth(this.text[i])
 
             // this is the horizontal coordinate where we must text wrap
             const LINE_WRAP_X_POS = width - TEXT_RIGHT_MARGIN
@@ -127,8 +124,8 @@ class DialogBox {
                 let ndi = this.text.indexOf(" ", i+1) // next delimiter index
                 let nextWord = this.text.substring(i+1, ndi)
 
-                if (textWidth(nextWord) +
-                    textWidth(this.text[i]) +
+                if (wordWidth(nextWord) +
+                    wordWidth(this.text[i]) +
                     cursor.x > LINE_WRAP_X_POS) {
                         cursor.y += HIGHLIGHT_BOX_HEIGHT
 
@@ -277,46 +274,5 @@ class DialogBox {
         pg.vertex(BLC.x+1+r, BLC.y-1)
         pg.vertex(BLC.x+1, BLC.y-1-r)
         pg.endShape()
-    }
-
-
-    /*  https://discourse.processing.org/t/textwidth-issues/14218/3
-        manually calculates textWidth via looking at pixels
-     */
-    realTextWidth(texte){
-        clear();
-
-        // écrit le texte
-        textAlign(LEFT, TOP);
-        fill(255,0,0);
-        textSize(100);
-        text(texte, 0, 0);
-
-        // ok la zone ou chercher un point noir
-        const _x = Math.ceil(textWidth(texte));
-        const _y = 0;
-        const w = 300; // arbitraire
-        const h = Math.floor(textAscent(texte));
-
-        loadPixels();
-        let max_x = _x; // coord du point non-blanc le plus éloigné
-
-        for (let x = _x; x < _x+w; x++) {
-            for (let y = _y; y < _y+h; y++) {
-
-                let k = 4* (x + y*width); // le rang du lot de valeurs rgba
-
-                if(pixels[k]>0){
-                    max_x = Math.max(x, max_x);
-                }
-            }
-        }
-        // console.log(texte+' : '+i+ " itérations... "+_x+' / '+max_x);
-
-        // si on cleare tout de suite on n'a même pas le temps de voir quoi que ce soit...
-        clear();
-
-        return max_x;
-
     }
 }

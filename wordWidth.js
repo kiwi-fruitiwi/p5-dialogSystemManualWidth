@@ -59,3 +59,20 @@ function charWidth(char) {
 
     return max_x
 }
+
+/**
+ * Returns the width of a word using individual widths from
+ * charWidth_pixels. Spaces are taken care of separately due to
+ * gigamarujr.ttf having an error in its space character.
+ */
+function wordWidth(word) {
+    let sum = 0;
+    [...word].forEach(w => {
+        if (w === ' ')
+            sum += SPACE_WIDTH
+        else
+            sum += charWidth(w) + LETTER_SPACING
+    })
+
+    return sum
+}
