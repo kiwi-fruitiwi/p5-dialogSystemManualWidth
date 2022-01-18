@@ -71,6 +71,7 @@ let highlightList = [] // a list of tuples specifying highlights and indexes
 let msPerPassage = 0 // how long to wait before advancing a passage
 
 function setup() {
+    noSmooth()
     createCanvas(1280, 720, WEBGL)
     cam = new Dw.EasyCam(this._renderer, {distance: 240});
 
