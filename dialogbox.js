@@ -52,8 +52,10 @@ class DialogBox {
         }
     }
 
-    // advances the current char in the current passage, but does nothing if
-    // we are at the end
+    /**
+     * advances the current char in the current passage, but does nothing if
+     * we are at the end
+     */
     advanceChar() {
         if (this.index < this.text.length - 1) {
             this.index += 1
@@ -68,19 +70,38 @@ class DialogBox {
          */
 
         noStroke()
-        let CHAR_POS = []
+        let CHAR_POS = [] /* we store our previous character positions */
 
-        const TEXT_TOP_MARGIN = 570
+        // TODO these are supposed to be relative to the textFrame, not canvas..
+        const TEXT_TOP_MARGIN = 560
         const TEXT_LEFT_MARGIN = 120
         const TEXT_RIGHT_MARGIN = TEXT_LEFT_MARGIN
         const HIGHLIGHT_PADDING = 0
 
-        // the bottom left corner of the current letter we are typing = cursor
+
+        /** display ADAM at the top left */
+        const cyan = color(188, 20, 94) // this color matches the frame border
+        fill(cyan)
+
+        const speakerName = 'ADAM'
+        let speakerCursor = new p5.Vector(
+            TEXT_LEFT_MARGIN-20, TEXT_TOP_MARGIN-40)
+
+        for(let i in speakerName) {
+            text(speakerName[i], speakerCursor.x, speakerCursor.y)
+            speakerCursor.x += this.wordWidth(speakerName[i])
+        }
+
+
+        /**
+         * now it's time to display the text of each passage! the bottom
+         * left corner of the current letter we are typing is located at cur
+         * @type {p5.Vector}
+         */
         let cursor = new p5.Vector(TEXT_LEFT_MARGIN, TEXT_TOP_MARGIN)
         const HIGHLIGHT_BOX_HEIGHT = textAscent() + textDescent()
 
-        /*  display the entire passage without text wrap
-         */
+        /*  display the entire passage without text wrap */
         for (let i = 0; i < this.index; i++) {
             // save the position of the ith character. we'll need this later
             CHAR_POS.push(cursor.copy())
@@ -96,8 +117,8 @@ class DialogBox {
 
             // loop through hlEntry, a list of highlight indices. highlight!
             for (let e of hlEntry) {
-                if (i >= e.start &&
-                    i <= e.end) {
+                if (i >= e.start-1 &&
+                    i < e.end-1) {
                     fill(63, 60, 75)
                 }
             }
@@ -109,12 +130,13 @@ class DialogBox {
 
             /*  modify cursor position to where the next letter should be.
              */
-            cursor.x += wordWidth(this.text[i])
+            cursor.x += this.wordWidth(this.text[i])
 
             // this is the horizontal coordinate where we must text wrap
             const LINE_WRAP_X_POS = width - TEXT_RIGHT_MARGIN
 
-            /*  if we're at a whitespace, determine if we need a new line:
+            /*  okay just kidding. now we're going to wrap the text:
+                if we're at a whitespace, determine if we need a new line:
                     find the next whitespace
                     the word between us and that whitespace is the next word
                     if the width of that word + our cursor + current space >
@@ -124,8 +146,8 @@ class DialogBox {
                 let ndi = this.text.indexOf(" ", i + 1) // next delimiter index
                 let nextWord = this.text.substring(i + 1, ndi)
 
-                if (wordWidth(nextWord) +
-                    wordWidth(this.text[i]) +
+                if (this.wordWidth(nextWord) +
+                    this.wordWidth(this.text[i]) +
                     cursor.x > LINE_WRAP_X_POS) {
                     cursor.y += HIGHLIGHT_BOX_HEIGHT + 5
                     /* 5 is additional height to match dread's line-height*/
@@ -146,4 +168,90 @@ class DialogBox {
         cam.endHUD()
     }
 
+
+    /**
+     * Returns the width of a word using individual widths from
+     * charWidth_pixels. Spaces are taken care of separately due to
+     * gigamarujr.ttf having an error in its space character.
+     */
+    wordWidth(word) {
+        let sum = 0;
+        [...word].forEach(w => {
+            if (w === ' ')
+                sum += SPACE_WIDTH
+            else
+                sum += this.charWidth(w) + LETTER_SPACING
+        })
+
+        return sum
+    }
+
+    /*  return the width in pixels of char using the pixels array */
+    charWidth(char) {
+        if (cache[char]) {
+            // console.log(`cached answer returned: ${cache[char]}`)
+            return cache[char]
+        } else {
+            /**
+             * create a graphics buffer to display a character. then determine its
+             * width by iterating through every pixel. Noting that 'm' in size 18
+             * font is only 14 pixels, perhaps setting the buffer to a max width of
+             * FONT_SIZE is sufficient. The height needs to be a bit higher to
+             * account for textDescent, textAscent. x1.5 is inexact, but should be
+             * plenty.
+             * @type {p5.Graphics}
+             */
+            let g = createGraphics(FONT_SIZE, FONT_SIZE * 1.5)
+            g.colorMode(HSB, 360, 100, 100, 100)
+            g.textFont(font, FONT_SIZE)
+            g.background(0, 0, 0)
+            g.fill(0, 0, 100)
+
+            /**
+             *  the base height of g is g.height; this is an approximation of what
+             *  would fit most characters. utterly untested but seems okay with
+             *  large paragraphs. A lowercase 'm' is about ⅓ the height of
+             *  textAscent + textDescent.; a 'j' is ⅔.
+             */
+            g.text(char, 0, g.height - FONT_SIZE / 2)
+            g.loadPixels()
+
+            let pd = g.pixelDensity()
+            let offset
+            let max_x = 0 /* the maximum x position we've seen a non-black pixel */
+
+            /*  a pixel value "fails" if it's not [0, 0, 0, 255] which indicates
+             black. so if redFail is true, that means red is not 0. if alphaFail
+             is true, it means alpha is not 255.
+             */
+            let redFail, greenFail, blueFail, alphaFail
+
+            /* iterate through every pixel in pixels[] array */
+            for (let x = 0; x < g.width; x++) {
+                for (let y = 0; y < g.height; y++) {
+                    /* 🌟 there are two methods below: .get() and pixels[]. use one */
+
+                    // the .get() strategy. slower than using pixels[] and
+                    // loadpixels() let c = g.get(x, y) if (!(c[0] === 0 && c[1]
+                    // === 0 && c[2] === 0 && c[3] === 255)) max_x = Math.max(x,
+                    // max_x)
+
+                    // the pixels[] strategy. about twice the speed as .get()
+
+                    offset = (y * g.width + x) * pd * 4
+                    // pixel values are rgba in the format [r, g, b, a]
+                    redFail = (offset % 4 === 0 && g.pixels[offset] !== 0)
+                    greenFail = (offset % 4 === 1 && g.pixels[offset] !== 0)
+                    blueFail = (offset % 4 === 2 && g.pixels[offset] !== 0)
+                    alphaFail = (offset % 4 === 3 && g.pixels[offset] !== 255)
+
+                    if (redFail || greenFail || blueFail || alphaFail)
+                        max_x = Math.max(x, max_x)
+                }
+            }
+
+            cache[char] = max_x
+            return max_x
+        }
+    }
 }
