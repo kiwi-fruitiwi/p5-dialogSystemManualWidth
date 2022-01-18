@@ -29,7 +29,7 @@ let cam // easycam!
 let adamVoice // mp3 file playing sound effects from samus meeting adam
 let playing // flag for whether the sound is playing
 let voiceStartMillis // ms elapsed until we start our audio
-const SOUND_FILE_START = 12000
+const SOUND_FILE_START = 12
 
 
 /**
@@ -74,29 +74,31 @@ let passageStartTimes = [] // how long to wait before advancing a passage
 function setup() {
     noSmooth()
     createCanvas(1280, 720, WEBGL)
+
     cam = new Dw.EasyCam(this._renderer, {distance: 240});
 
     colorMode(HSB, 360, 100, 100, 100)
     textFont(font, FONT_SIZE)
 
-    /* 'in' makes our variable the index, while 'of' makes it the value! */
     for (let key in passages) {
         textList.push(passages[key]['text'])
-
-        // for (let highlightKey in passages[key]['highlightIndices'])
-        //     highlightList.push(passages[key]['highlightIndices'])
         highlightList.push(passages[key]['highlightIndices'])
         passageStartTimes.push(passages[key]['ms'])
     }
 
-    /* we can also use the Object.keys method to grab keys from JSON!
-    for (let i = 0; i < Object.keys(passages).length; i++) {
-        console.log(passages[i].highlightIndices)
-    } */
-
-    // TODO add arguments to DialogBox: tpp, hll
     dialogBox = new DialogBox(textList, highlightList, passageStartTimes)
 }
+
+
+function keyPressed() {
+    if (!playing && key === 's') {
+        adamVoice.play()
+        adamVoice.jump(12)
+        voiceStartMillis = millis()
+        playing = true
+    }
+}
+
 
 function draw() {
     background(234, 34, 24)
@@ -106,20 +108,24 @@ function draw() {
     drawBlenderAxes()
     displayHUD()
 
+    let timeElapsed = millis() - voiceStartMillis + SOUND_FILE_START*1000
     if (playing) {
-        // console.log(millis() - voiceStartMillis)
-        console.log(dialogBox.getNextPassageStartTime())
-        dialogBox.renderTextFrame(cam)
-        dialogBox.renderText(cam)
+        if ((dialogBox.passageIndex === 0) &&
+            (timeElapsed < dialogBox.startTimes[0])) {
+        } else {
+            // console.log(dialogBox.getNextPassageStartTime())
+            dialogBox.renderTextFrame(cam)
+            dialogBox.renderText(cam)
 
-        if (frameCount % 2 === 0)
-            dialogBox.advanceChar()
+            /* if (round(millis()) % 3 === 0) */ // we don't catch every millis call
+            if (frameCount % 2 === 0)
+                dialogBox.advanceChar()
 
-        if (millis() - voiceStartMillis > dialogBox.getNextPassageStartTime()) {
-            dialogBox.nextPassage()
-            console.log(`advanced! to ${dialogBox.passageIndex}`)
+            if (timeElapsed > dialogBox.getNextPassageStartTime()) {
+                dialogBox.nextPassage()
+                console.log(`advanced! to ${dialogBox.passageIndex}`)
+            }
         }
-            
     }
 }
 
@@ -188,13 +194,5 @@ document.oncontextmenu = function () {
 function touchStarted() {
     if (getAudioContext().state !== 'running') {
         getAudioContext().resume().then(r => {});
-    }
-}
-
-function keyPressed() {
-    if (!playing && key === 's') {
-        adamVoice.play()
-        voiceStartMillis = millis()
-        playing = true
     }
 }
