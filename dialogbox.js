@@ -1,9 +1,10 @@
 class DialogBox {
-    constructor(passages, highlightIndices, msPerPassage) {
+    constructor(passages, highlightIndices, startTimes) {
         /*  contains an array of passage texts:
                 ["passage 1...", "passage 2...", "passage 3...", etc.]
          */
         this.passageList = passages
+        this.totalPassages = passages.length
         this.index = 0 // the char index we are currently displaying
         this.passageIndex = 0 // which passage in our passage array are we on?
         this.passage = this.passageList[this.passageIndex]
@@ -19,26 +20,24 @@ class DialogBox {
 
         // list of hardcoded (start, end) specifying which words to highlight
         this.highlightIndices = highlightIndices
-
-        /*  TODO
-                hardcode highlightIndices
-                triangle
-                time characters per section in Dread for advanceChar
-                better times: synchronize with video
-                JSON input for passages and indices
-                    https://p5js.org/reference/#/p5/loadJSON
-
-                ...
-                make adam show up
-                port to java
-                polish lengths for text box frame to make sure they are accurate
-         */
+        this.startTimes = startTimes // when this passage starts in the audio
+        console.log(this.startTimes)
     }
 
 
-    /*  advance to the next passage
-        how will this be called?
+    /**
+     * returns start time of passage after the current one. if none exists,
+     * return ∞
+     */
+    getNextPassageStartTime() {
+        if (this.passageIndex < this.totalPassages-1) {
+            return this.startTimes[this.passageIndex+1]
+        } else return Infinity
+    }
 
+
+    /**
+     * advance to the next passage
      */
     nextPassage() {
         if (this.passageIndex === this.passageList.length - 1) {

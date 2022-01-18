@@ -15,7 +15,7 @@ coding plan
  ☒ add artaria.mp3
  ☒ update passage.json with full text and indices
  ☒ update passage.json correct durations via audacity
- add 'ADAM' text in correct color
+ ☒ add 'ADAM' text in correct color
  breathing triangle
  the text rate is faster than the speech
 
@@ -29,6 +29,8 @@ let cam // easycam!
 let adamVoice // mp3 file playing sound effects from samus meeting adam
 let playing // flag for whether the sound is playing
 let voiceStartMillis // ms elapsed until we start our audio
+const SOUND_FILE_START = 12000
+
 
 /**
  * this can't be large because our charWidth graphics buffer is of finite
@@ -50,7 +52,6 @@ let dialogBox
 let mode_2D = false
 
 let passages // our json file input
-let lastPassageAdvanceTime = 0 // when was the last passage advance?
 
 function preload() {
     font = loadFont('data/giga.ttf') // doesn't work due to textWidth issues
@@ -68,7 +69,7 @@ let textList = []
 
 /* grab other information: ms spent on each passage, highlights */
 let highlightList = [] // a list of tuples specifying highlights and indexes
-let msPerPassage = 0 // how long to wait before advancing a passage
+let passageStartTimes = [] // how long to wait before advancing a passage
 
 function setup() {
     noSmooth()
@@ -85,7 +86,7 @@ function setup() {
         // for (let highlightKey in passages[key]['highlightIndices'])
         //     highlightList.push(passages[key]['highlightIndices'])
         highlightList.push(passages[key]['highlightIndices'])
-        msPerPassage = passages[key]['ms']
+        passageStartTimes.push(passages[key]['ms'])
     }
 
     /* we can also use the Object.keys method to grab keys from JSON!
@@ -94,7 +95,7 @@ function setup() {
     } */
 
     // TODO add arguments to DialogBox: tpp, hll
-    dialogBox = new DialogBox(textList, highlightList, msPerPassage)
+    dialogBox = new DialogBox(textList, highlightList, passageStartTimes)
 }
 
 function draw() {
@@ -106,17 +107,19 @@ function draw() {
     displayHUD()
 
     if (playing) {
+        // console.log(millis() - voiceStartMillis)
+        console.log(dialogBox.getNextPassageStartTime())
         dialogBox.renderTextFrame(cam)
         dialogBox.renderText(cam)
 
-        if (frameCount % 1 === 0) {
+        if (frameCount % 2 === 0)
             dialogBox.advanceChar()
-        }
 
-        if (millis() - lastPassageAdvanceTime > 4000) {
+        if (millis() - voiceStartMillis > dialogBox.getNextPassageStartTime()) {
             dialogBox.nextPassage()
-            lastPassageAdvanceTime = millis()
+            console.log(`advanced! to ${dialogBox.passageIndex}`)
         }
+            
     }
 }
 
