@@ -2,7 +2,11 @@ class DialogBox {
     constructor(passages, highlightIndices, startTimes) {
         /*  contains an array of passage texts:
                 ["passage 1...", "passage 2...", "passage 3...", etc.]
+
+            +indices for highlights (possibly multiple per passage)
+            +startTimes for each passage based on the mp3
          */
+
         this.passageList = passages
         this.totalPassages = passages.length
         this.index = 0 // the char index we are currently displaying
@@ -14,14 +18,13 @@ class DialogBox {
         this.BOTTOM_MARGIN = 10
         this.HEIGHT = 120
 
-        this.boxWidth = width - this.LEFT_MARGIN - this.RIGHT_MARGIN
+        // this.boxWidth = width - this.LEFT_MARGIN - this.RIGHT_MARGIN
         this.textFrame = loadImage('data/textFrame.png')
         this.text = this.passageList[0]
 
         // list of hardcoded (start, end) specifying which words to highlight
         this.highlightIndices = highlightIndices
         this.startTimes = startTimes // when this passage starts in the audio
-        console.log(this.startTimes)
     }
 
 

@@ -28,7 +28,9 @@ let font
 let cam // easycam!
 let adamVoice // mp3 file playing sound effects from samus meeting adam
 let playing // flag for whether the sound is playing
-let voiceStartMillis // ms elapsed until we start our audio
+
+// the timestamp for when our audio starts. uses millis(), ms since sketch start
+let voiceStartMillis
 const SOUND_FILE_START = 12
 
 
@@ -86,6 +88,9 @@ function setup() {
         passageStartTimes.push(passages[key]['ms'])
     }
 
+    for (let i = 0; i < Object.keys(passages).length; i++)
+        console.log(passages[i].highlightIndices)
+
     dialogBox = new DialogBox(textList, highlightList, passageStartTimes)
 }
 
@@ -96,6 +101,11 @@ function keyPressed() {
         adamVoice.jump(12)
         voiceStartMillis = millis()
         playing = true
+    }
+
+    if (key == 'z') {
+        adamVoice.stop()
+        noLoop()
     }
 }
 
@@ -117,7 +127,8 @@ function draw() {
             dialogBox.renderTextFrame(cam)
             dialogBox.renderText(cam)
 
-            /* if (round(millis()) % 3 === 0) */ // we don't catch every millis call
+            /* if (round(millis()) % 3 === 0) */
+            // we don't catch every millis call
             if (frameCount % 2 === 0)
                 dialogBox.advanceChar()
 
