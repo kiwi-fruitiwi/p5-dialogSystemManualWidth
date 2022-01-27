@@ -13,10 +13,10 @@ class DialogBox {
         this.passageIndex = 0 // which passage in our passage array are we on?
         this.passage = this.passageList[this.passageIndex]
 
-        this.LEFT_MARGIN = 50
-        this.RIGHT_MARGIN = this.LEFT_MARGIN
-        this.BOTTOM_MARGIN = 10
-        this.HEIGHT = 120
+        // this.LEFT_MARGIN = 50
+        // this.RIGHT_MARGIN = this.LEFT_MARGIN
+        // this.BOTTOM_MARGIN = 10
+        // this.HEIGHT = 120
 
         // this.boxWidth = width - this.LEFT_MARGIN - this.RIGHT_MARGIN
         this.textFrame = loadImage('data/textFrame.png')
@@ -25,6 +25,9 @@ class DialogBox {
         // list of hardcoded (start, end) specifying which words to highlight
         this.highlightIndices = highlightIndices
         this.startTimes = startTimes // when this passage starts in the audio
+
+        this.phase = 0 /* controls fading for triangle via alpha channel */
+        this.radius = 6 /* "radius" of the next-passage triangle */
     }
 
 
@@ -71,10 +74,39 @@ class DialogBox {
             color(204, 4, 80) is the correct white text color
          */
 
+        /*  render fading dialogbox triangle if:
+         *      we are at the end of the passage, i.e.
+         *          this.index === this.passage.length-1?
+         *
+         */
+        push()
+        const PADDING = 40 /* space between center of triangle and box side */
+        translate(width-125, height-50)
+
+        /**
+         *  an equilateral triangle with center (0,0) and long leg 2*r has
+         *  vertices at; prove using law of sines, verify using py. theorem.
+         *  (0, r)
+         *  (-2r/sqrt(3), -r)
+         *  (2r/sqrt(3), -r)
+         */
+        const r = this.radius
+
+        /* alpha value to enable fading in our triangle */
+        const a = map(sin(frameCount/20), -1, 1, 0, 80)
+
+        const alphaShiftingCyan = color(188, 20, 94, a)
+        fill(alphaShiftingCyan)
+        noStroke()
+        triangle(0, r, -2*r/sqrt(3), -r, 2*r/sqrt(3), -r)
+        pop()
+
+
         noStroke()
         let CHAR_POS = [] /* we store our previous character positions */
 
         // TODO these are supposed to be relative to the textFrame, not canvas..
+        // but how do we determine the dimensions of the textFrame?
         const TEXT_TOP_MARGIN = 560
         const TEXT_LEFT_MARGIN = 120
         const TEXT_RIGHT_MARGIN = TEXT_LEFT_MARGIN
@@ -166,6 +198,8 @@ class DialogBox {
     // loads the saved box texture with transparency
     renderTextFrame(cam) {
         cam.beginHUD(p5._renderer, width, height)
+
+        // TODO this definitely does not place at (0,0). why is it centering?
         image(this.textFrame, 0, 0, width, height)
         cam.endHUD()
     }

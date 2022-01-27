@@ -88,9 +88,6 @@ function setup() {
         passageStartTimes.push(passages[key]['ms'])
     }
 
-    for (let i = 0; i < Object.keys(passages).length; i++)
-        console.log(passages[i].highlightIndices)
-
     dialogBox = new DialogBox(textList, highlightList, passageStartTimes)
 }
 
