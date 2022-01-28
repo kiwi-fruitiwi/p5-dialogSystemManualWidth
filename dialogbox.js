@@ -11,7 +11,6 @@ class DialogBox {
         this.totalPassages = passages.length
         this.index = 0 // the char index we are currently displaying
         this.passageIndex = 0 // which passage in our passage array are we on?
-        this.passage = this.passageList[this.passageIndex]
 
         // this.LEFT_MARGIN = 50
         // this.RIGHT_MARGIN = this.LEFT_MARGIN
@@ -98,7 +97,10 @@ class DialogBox {
         const alphaShiftingCyan = color(188, 20, 94, a)
         fill(alphaShiftingCyan)
         noStroke()
-        triangle(0, r, -2*r/sqrt(3), -r, 2*r/sqrt(3), -r)
+
+        /* only display the triangle when the dialog is done */
+        if(this.index === this.text.length-1)
+            triangle(0, r, -2*r/sqrt(3), -r, 2*r/sqrt(3), -r)
         pop()
 
 
@@ -110,7 +112,7 @@ class DialogBox {
         const TEXT_TOP_MARGIN = 560
         const TEXT_LEFT_MARGIN = 120
         const TEXT_RIGHT_MARGIN = TEXT_LEFT_MARGIN
-        const HIGHLIGHT_PADDING = 0
+        // const HIGHLIGHT_PADDING = 0
 
 
         /** display ADAM at the top left */
