@@ -98,9 +98,11 @@ function keyPressed() {
         adamVoice.jump(12)
         voiceStartMillis = millis()
         playing = true
+        console.log("[ INFO ] - starting AI voice")
+        console.log("[  OK  ] - synchronized dialog boxes to speech")
     }
 
-    if (key == 'z') {
+    if (key === 'z') {
         adamVoice.stop()
         noLoop()
     }

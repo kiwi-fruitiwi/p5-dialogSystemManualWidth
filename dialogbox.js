@@ -12,10 +12,15 @@ class DialogBox {
         this.index = 0 // the char index we are currently displaying
         this.passageIndex = 0 // which passage in our passage array are we on?
 
-        // this.LEFT_MARGIN = 50
-        // this.RIGHT_MARGIN = this.LEFT_MARGIN
-        // this.BOTTOM_MARGIN = 10
-        // this.HEIGHT = 120
+
+        /* position values from textFrame.png 's generation script */
+        this.LEFT_MARGIN = 80
+        this.RIGHT_MARGIN = this.LEFT_MARGIN
+        this.BOTTOM_MARGIN = 20
+        this.HEIGHT = 224
+
+        /* this is the y-coordinate of the dialog box */
+        this.Y = height-this.HEIGHT-this.BOTTOM_MARGIN
 
         // this.boxWidth = width - this.LEFT_MARGIN - this.RIGHT_MARGIN
         this.textFrame = loadImage('data/textFrame.png')
@@ -26,7 +31,7 @@ class DialogBox {
         this.startTimes = startTimes // when this passage starts in the audio
 
         this.phase = 0 /* controls fading for triangle via alpha channel */
-        this.radius = 6 /* "radius" of the next-passage triangle */
+        this.radius = 8 /* "radius" of the next-passage triangle */
     }
 
 
@@ -80,7 +85,7 @@ class DialogBox {
          */
         push()
         const PADDING = 40 /* space between center of triangle and box side */
-        translate(width-125, height-50)
+        translate(width-125, height-55)
 
         /**
          *  an equilateral triangle with center (0,0) and long leg 2*r has
@@ -88,11 +93,15 @@ class DialogBox {
          *  (0, r)
          *  (-2r/sqrt(3), -r)
          *  (2r/sqrt(3), -r)
+         *
+         *  but Dread's triangle is not equilateral. we will use a scaling
+         *  factor in the x direction :p
          */
         const r = this.radius
+        const YSF = 0.63 /* scaling factor on the y-axis */
 
         /* alpha value to enable fading in our triangle */
-        const a = map(sin(frameCount/20), -1, 1, 0, 80)
+        const a = map(sin(frameCount/12), -1, 1, 25, 100)
 
         const alphaShiftingCyan = color(188, 20, 94, a)
         fill(alphaShiftingCyan)
@@ -100,28 +109,35 @@ class DialogBox {
 
         /* only display the triangle when the dialog is done */
         if(this.index === this.text.length-1)
-            triangle(0, r, -2*r/sqrt(3), -r, 2*r/sqrt(3), -r)
+            triangle(0, r*YSF,
+                -2*r/sqrt(3), -r*YSF,
+                2*r/sqrt(3), -r*YSF)
         pop()
 
 
         noStroke()
         let CHAR_POS = [] /* we store our previous character positions */
 
-        // TODO these are supposed to be relative to the textFrame, not canvas..
-        // but how do we determine the dimensions of the textFrame?
-        const TEXT_TOP_MARGIN = 560
-        const TEXT_LEFT_MARGIN = 120
+        /**
+         *  TEXT_TOP_MARGIN is where the body of the dialog starts. Does not
+         *  include the speaker name, which is offset later
+         */
+        const TEXT_TOP_PADDING = 84
+        const TEXT_TOP_MARGIN = this.Y + TEXT_TOP_PADDING
+        const TEXT_LEFT_PADDING = 40
+        const TEXT_LEFT_MARGIN = this.LEFT_MARGIN + TEXT_LEFT_PADDING
         const TEXT_RIGHT_MARGIN = TEXT_LEFT_MARGIN
-        // const HIGHLIGHT_PADDING = 0
-
 
         /** display ADAM at the top left */
         const cyan = color(188, 20, 94) // this color matches the frame border
         fill(cyan)
 
         const speakerName = 'ADAM'
+        const SPEAKER_LEFT_PADDING = -20
+        const SPEAKER_TOP_PADDING = -40
         let speakerCursor = new p5.Vector(
-            TEXT_LEFT_MARGIN-20, TEXT_TOP_MARGIN-40)
+            TEXT_LEFT_MARGIN + SPEAKER_LEFT_PADDING,
+            TEXT_TOP_MARGIN + SPEAKER_TOP_PADDING)
 
         for(let i in speakerName) {
             text(speakerName[i], speakerCursor.x, speakerCursor.y)
@@ -202,6 +218,7 @@ class DialogBox {
         cam.beginHUD(p5._renderer, width, height)
 
         // TODO this definitely does not place at (0,0). why is it centering?
+        // SOLUTION: textFrame is actually 1280x720 on a transparent background
         image(this.textFrame, 0, 0, width, height)
         cam.endHUD()
     }
