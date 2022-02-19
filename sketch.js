@@ -56,10 +56,10 @@ let mode_2D = false
 let passages // our json file input
 
 function preload() {
-    font = loadFont('data/giga.ttf') // doesn't work due to textWidth issues
+    font = loadFont('data/giga.ttf') // requires manual textWidth method
     // font = loadFont('data/meiryo.ttf')
     passages = loadJSON('passages.json')
-    adamVoice = loadSound('data/artaria.mp3')
+    adamVoice = loadSound('data/artaria.mp3', null, null)
     playing = false
 }
 
@@ -109,8 +109,32 @@ function keyPressed() {
 }
 
 
+function openDialog() {
+    dialogBox.openAnimation(map(mouseX, 0, width, 0.01, 100), cam)
+
+    /**
+     * open in ¼ of a second using frameCount: stay at 100 after
+     * disappearing is also okay if we replace it immediately with the real
+     * textFrame renderer.
+     *
+     * @param START start time: milliseconds after sketch load
+     * @param END end time: milliseconds after sketch load
+     */
+    const START = 1000
+    const END = 1200
+
+    // if(millis() > START && millis() < END) {
+    //     let slider = map(millis() - START, 0, END-START, 0.01, 100)
+    //     dialogBox.openAnimation(slider)
+    // } else if(millis() >= END) {
+    //     dialogBox.openAnimation(100)
+    // }
+}
+
+
 function draw() {
     background(234, 34, 24)
+    openDialog()
 
     ambientLight(250);
     directionalLight(0, 0, 10, .5, 1, 0); // z axis seems inverted
